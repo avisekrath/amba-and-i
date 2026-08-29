@@ -1564,7 +1564,30 @@
   // Slug → { videoId, title, channel, url }. Populated on load from EXERCISE_VIDEOS below.
   // Add/replace entries in EXERCISE_VIDEOS to switch demos; the ▶ button auto-appears when a slug has one.
   const EXERCISE_VIDEOS = {
-    // filled in on next commit — placeholder for now so play buttons stay hidden
+    'bench-press':         { videoId: 'vthMCtgVtFw', title: 'The Official Bench Press Check List', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=vthMCtgVtFw' },
+    'pendlay-row':         { videoId: 'axoeDmW0oAY', title: 'Perfect Rowing Technique (Pendlay Row)', channel: 'Jeff Nippard', url: 'https://www.youtube.com/watch?v=axoeDmW0oAY' },
+    'incline-db-press':    { videoId: '0f6-uCUKqgA', title: 'Incline Dumbbell Press · Targeting The Muscle', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=0f6-uCUKqgA' },
+    'lat-pulldown':        { videoId: 'SALxEARiMkw', title: 'How to do Lat Pulldowns', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=SALxEARiMkw' },
+    'cable-row':           { videoId: 'rnnZr62A94s', title: 'Back Rows — 2 Best Tips', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=rnnZr62A94s' },
+    'bb-curl':             { videoId: '-moSw0_zJ5c', title: '8 Barbell Curl Mistakes and How to Fix Them', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=-moSw0_zJ5c' },
+    'back-squat':          { videoId: '7v_V6xiA_AA', title: 'How to Perform A Back Squat', channel: 'Squat University', url: 'https://www.youtube.com/watch?v=7v_V6xiA_AA' },
+    'seated-db-press':     { videoId: 'HzIiNhHhhtA', title: 'Seated Dumbbell Shoulder Press', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=HzIiNhHhhtA' },
+    'rdl':                 { videoId: '_oyxCn2iSjU', title: 'How To Do Romanian Deadlifts', channel: 'Jeff Nippard', url: 'https://www.youtube.com/watch?v=_oyxCn2iSjU' },
+    'lateral-raise':       { videoId: '4hTUCDUQaNA', title: 'The Only Dumbbell Lateral Raise Guide You Need', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=4hTUCDUQaNA' },
+    'split-squat':         { videoId: 'hiLF_pF3EJM', title: 'Bulgarian Split Squats — Proper Form', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=hiLF_pF3EJM' },
+    'db-skull-crusher':    { videoId: 'gXbSA9EKUtA', title: 'How NOT to Get Big Triceps (Skullcrushers)', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=gXbSA9EKUtA' },
+    'pull-ups':            { videoId: 'sIvJTfGxdFo', title: 'The Official Pull-Up Checklist', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=sIvJTfGxdFo' },
+    'incline-bench':       { videoId: 'CTB_Jb_UvII', title: 'Incline Bench Press — TactiX', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=CTB_Jb_UvII' },
+    'chest-supported-row': { videoId: '0UBRfiO4zDs', title: 'Chest Supported Row', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=0UBRfiO4zDs' },
+    'weighted-dips':       { videoId: 'vi1-BOcj3cQ', title: 'Are You Doing Dips Properly?', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=vi1-BOcj3cQ' },
+    'pec-fly':             { videoId: 'JUDTGZh4rhg', title: 'Cable Flys — Proper Form', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=JUDTGZh4rhg' },
+    'incline-db-curl':     { videoId: 'DCe8f6vMe9A', title: 'Incline Dumbbell Curls — Proper Form', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=DCe8f6vMe9A' },
+    'standing-ohp':        { videoId: 'wol7Hko8RhY', title: 'How To Overhead Press', channel: 'Alan Thrall', url: 'https://www.youtube.com/watch?v=wol7Hko8RhY' },
+    'trap-bar-deadlift':   { videoId: 'TU2xZ7s4jus', title: 'The Trap Bar Deadlift', channel: 'Alan Thrall', url: 'https://www.youtube.com/watch?v=TU2xZ7s4jus' },
+    'cable-lateral-raise': { videoId: 'lq7eLC30b9w', title: 'Leaning Cable Lateral Raise', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=lq7eLC30b9w' },
+    'leg-press':           { videoId: 'B6rGDcfyPto', title: 'How To Leg Press For Quad Growth', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=B6rGDcfyPto' },
+    'lying-hamstring-curl':{ videoId: 'jobEeklwrrs', title: '9 Leg Curl Mistakes and How to Fix Them', channel: 'Renaissance Periodization', url: 'https://www.youtube.com/watch?v=jobEeklwrrs' },
+    'tricep-pushdown':     { videoId: 'REWv05om0ho', title: 'Stop Doing Tricep Pushdowns Like This', channel: 'ATHLEAN-X', url: 'https://www.youtube.com/watch?v=REWv05om0ho' }
   };
 
   // Recipe library — each prep task can point to one of these via recipeKey.
