@@ -1534,6 +1534,34 @@
     a: { key: 'a', label: 'Amba', name: 'Amba',   kcal: '1,500', protein: '120 g' }
   };
 
+  // Cloudflare Worker that ingests HealthKit data from an iOS Shortcut
+  const API_URL = 'https://amba-and-i-api.moonkiln.workers.dev';
+
+  async function fetchHealthLatest(user) {
+    try {
+      const res = await fetch(`${API_URL}/health/${user}/latest`, { cache: 'no-store' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch { return null; }
+  }
+  function healthFor(user, date) {
+    return state.healthCache && state.healthCache[user] && state.healthCache[user][date];
+  }
+  async function refreshHealth(user) {
+    const days = await fetchHealthLatest(user);
+    if (!Array.isArray(days)) return;
+    if (!state.healthCache) state.healthCache = {};
+    state.healthCache[user] = state.healthCache[user] || {};
+    days.forEach(d => { if (d && d.date) state.healthCache[user][d.date] = d; });
+    saveState(state);
+    renderAll();
+  }
+  function formatNum(n) { return Number(n || 0).toLocaleString(); }
+  function formatK(n) {
+    n = Number(n || 0);
+    return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : String(n);
+  }
+
   // Simple line-based SVG icons for tabs — same style, keeps things quiet
   const ICONS = {
     over: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
@@ -2584,10 +2612,24 @@
     }
     wrap.append(strip);
 
-    // Today's numbers (goals from settings, weight if logged)
+    // Today's numbers (goals from settings, weight if logged, live steps from Watch)
     const goal = getGoal(state.user);
     const stepTarget = day.move.stepTarget[state.user];
     const latest = latestWeightBefore(state.user, state.date);
+    const health = healthFor(state.user, state.date);
+
+    const stepsCell = health && health.steps
+      ? el('div', { class: 'over-num' }, [
+          el('span', { class: 'k' }, 'steps · watch'),
+          el('span', { class: 'v' }, formatK(health.steps)),
+          el('span', { class: 'u' }, 'target ' + stepTarget)
+        ])
+      : el('div', { class: 'over-num' }, [
+          el('span', { class: 'k' }, 'steps'),
+          el('span', { class: 'v' }, stepTarget),
+          el('span', { class: 'u' }, day.move.lift ? 'lift day' : 'rest day')
+        ]);
+
     wrap.append(el('div', { class: 'over-panel' }, [
       el('h3', {}, USERS[state.user].name + " · Today's numbers"),
       el('div', { class: 'over-numbers' }, [
@@ -2601,11 +2643,7 @@
           el('span', { class: 'v' }, goal.protein + ' g'),
           el('span', { class: 'u' }, 'minimum')
         ]),
-        el('div', { class: 'over-num' }, [
-          el('span', { class: 'k' }, 'steps'),
-          el('span', { class: 'v' }, stepTarget),
-          el('span', { class: 'u' }, day.move.lift ? 'lift day' : 'rest day')
-        ])
+        stepsCell
       ]),
       latest ? el('div', {
         style: 'margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--divider); display: flex; justify-content: space-between; align-items: baseline; cursor: pointer;',
@@ -2747,7 +2785,12 @@
     const total = eatIds.length;
     const eatenKcal = total === 0 ? 0 : Math.round((eaten / total) * goal.kcal);
 
-    const burn = getBurn(u, iso) || 0;
+    const manualBurn = getBurn(u, iso);
+    const health = healthFor(u, iso);
+    const watchBurn = health && health.activeEnergyKcal;
+    // Manual override wins; else pull from Watch; else 0.
+    const burn = manualBurn != null ? manualBurn : (watchBurn || 0);
+    const burnSource = manualBurn != null ? 'manual' : (watchBurn ? 'watch' : 'none');
     // Balance: goal kcal - eaten + burn. Positive number = deficit (good if losing).
     const balance = goal.kcal - eatenKcal + burn;
     const isDef = balance > 0;
@@ -2803,18 +2846,27 @@
     if (spark) wCard.append(spark);
     wrap.append(wCard);
 
-    // Calorie burn card
+    // Calorie burn card — auto from Watch when available, manual entry overrides
     const bIn = el('input', {
       type: 'number', inputmode: 'numeric', step: '10',
       min: '0', max: '3000',
-      placeholder: '0', value: burn ? burn : '',
+      placeholder: watchBurn ? String(watchBurn) : '0',
+      value: manualBurn != null ? manualBurn : '',
       onInput: (e) => { setBurn(u, iso, e.target.value); },
       onBlur: () => renderAll()
     });
+    const burnHelpText = burnSource === 'watch'
+      ? `From ${USERS[u].name}'s Apple Watch — ${formatNum(watchBurn)} kcal today. Type here to override.`
+      : (burnSource === 'manual'
+        ? 'Manual override — clear the number to use Watch data when it syncs.'
+        : 'From your watch or an honest estimate. Just extra activity above your daily normal — the lift session, long walks.');
+    const burnHeadExtra = burnSource === 'watch'
+      ? el('span', { style: 'font-family: var(--mono); font-size: 9px; color: var(--steps); letter-spacing: 0.08em; margin-left: 8px; text-transform: uppercase; font-weight: 700;' }, 'auto · watch')
+      : null;
     wrap.append(el('div', { class: 'log-card' }, [
-      el('h3', {}, 'Calorie burn'),
+      el('h3', {}, [ 'Calorie burn', burnHeadExtra ].filter(Boolean)),
       el('div', { class: 'log-input-row' }, [ bIn, el('span', { class: 'unit' }, 'kcal') ]),
-      el('div', { class: 'log-help' }, 'From your watch or an honest estimate. Just extra activity above your daily normal — the lift session, long walks.')
+      el('div', { class: 'log-help' }, burnHelpText)
     ]));
 
     // Daily balance
@@ -2979,12 +3031,31 @@
       el('p', { class: 'tab-sub' }, day.move.lift ? 'Lift, then rack up the steps.' : 'Steps are the plan.')
     ]);
 
+    const health = healthFor(state.user, state.date);
     const stepsSec = el('div', { class: 'move-section' }, [
       el('div', { class: 'move-head' }, [
         el('h3', {}, 'Steps'),
-        el('span', { class: 'meta' }, `Target · ${day.move.stepTarget[state.user]}`)
+        el('span', { class: 'meta' },
+          health && health.steps
+            ? `${formatNum(health.steps)} / ${day.move.stepTarget[state.user]}`
+            : `Target · ${day.move.stepTarget[state.user]}`)
       ])
     ]);
+    if (health && (health.steps || health.distanceKm)) {
+      stepsSec.append(el('div', {
+        style: 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0 16px;'
+      }, [
+        el('div', { style: 'background: var(--card); border: 1px solid var(--divider); border-left: 3px solid var(--steps); padding: 10px 12px; border-radius: 8px;' }, [
+          el('div', { style: 'font-family: var(--sans); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700;' }, 'From Watch · Steps'),
+          el('div', { style: 'font-family: var(--serif); font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px;' }, formatNum(health.steps || 0))
+        ]),
+        el('div', { style: 'background: var(--card); border: 1px solid var(--divider); border-left: 3px solid var(--steps); padding: 10px 12px; border-radius: 8px;' }, [
+          el('div', { style: 'font-family: var(--sans); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700;' }, 'Distance'),
+          el('div', { style: 'font-family: var(--serif); font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; margin-top: 4px;' },
+            (health.distanceKm || 0).toFixed(1) + ' km')
+        ])
+      ]));
+    }
     const stepsList = el('div', { class: 'task-list' });
     day.move.walks.forEach(w => stepsList.append(makeTask(w)));
     stepsList.append(makeTask({
@@ -3056,7 +3127,7 @@
         class: state.user === key ? 'active' : '',
         role: 'tab',
         'aria-selected': state.user === key ? 'true' : 'false',
-        onClick: () => { state.user = key; saveState(state); renderAll(); }
+        onClick: () => { state.user = key; saveState(state); renderAll(); refreshHealth(key); }
       }, u.label));
     }
   }
@@ -3317,6 +3388,10 @@
   renderAll();
   if (__qsTab && TABS.some(t => t.key === __qsTab)) { state.tab = __qsTab; renderAll(); }
   if (__qsSettings) openSettings();
+
+  // Fetch Watch data on load for both users (KV reads are cheap; two GETs)
+  refreshHealth('a');
+  refreshHealth('i');
 </script>
 </body>
 </html>
