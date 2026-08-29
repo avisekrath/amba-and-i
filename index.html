@@ -1173,6 +1173,115 @@
   }
   .spark { width: 100%; height: 60px; display: block; }
 
+  /* VIDEO MODAL */
+  .video-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(20, 23, 15, 0.75);
+    display: none;
+    animation: fadeIn 0.15s ease-out;
+  }
+  .video-backdrop.show { display: block; }
+  .video-modal {
+    position: fixed;
+    left: 12px; right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 520px;
+    margin: 0 auto;
+    z-index: 61;
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: calc(100vh - 32px);
+  }
+  .video-modal.show { display: flex; }
+  .video-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--divider);
+    gap: 12px;
+  }
+  .video-title {
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--ink);
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .video-head button {
+    background: transparent;
+    border: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .video-frame-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #000;
+  }
+  .video-frame-wrap iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: 0;
+  }
+  .video-meta {
+    padding: 10px 16px 14px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .video-meta a {
+    color: var(--strength);
+    text-decoration: none;
+    font-style: normal;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Play button on exercise rows */
+  .exercise-play {
+    background: var(--strength-soft);
+    color: var(--strength);
+    border: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 6px;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .exercise-play svg { width: 12px; height: 12px; margin-left: 1px; }
+  .exercise-play:active { background: var(--strength); color: var(--ground); }
+  .exercise-row-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-self: end;
+  }
+
   @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1230,6 +1339,16 @@
     </div>
     <div class="modal-body" id="settings-body"></div>
   </div>
+
+  <div class="video-backdrop" id="video-backdrop"></div>
+  <div class="video-modal" id="video-modal" role="dialog" aria-label="Exercise demo">
+    <div class="video-head">
+      <div class="video-title" id="video-title">Exercise</div>
+      <button id="video-close" aria-label="Close">✕</button>
+    </div>
+    <div class="video-frame-wrap"><iframe id="video-frame" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+    <div class="video-meta" id="video-meta"></div>
+  </div>
 </div>
 
 <script>
@@ -1270,38 +1389,44 @@
     { name: 'Fajita',   recipe: 'Lime · jeera · chilli · pepper · garlic' }
   ];
 
+  // Slug → { videoId, title, channel, url }. Populated on load from EXERCISE_VIDEOS below.
+  // Add/replace entries in EXERCISE_VIDEOS to switch demos; the ▶ button auto-appears when a slug has one.
+  const EXERCISE_VIDEOS = {
+    // filled in on next commit — placeholder for now so play buttons stay hidden
+  };
+
   const SESSIONS = {
     s1: { title: 'Chest · Back · Biceps 1', exercises: [
-      { name: 'Bench Press',        sets: '4×8 · 5×6 · 6×5',  aSwap: 'Smith bench, feet up' },
-      { name: 'Pendlay Row',        sets: '4×12 · 4×10 · 4×8', aSwap: 'Chest-supported T-bar row' },
-      { name: 'Incline DB Press',   sets: '4×12 · 4×10 · 4×8', aSwap: 'Same, lighter DBs' },
-      { name: 'Lat Pulldown',       sets: '3×12–15',            aSwap: 'Assisted pulldown' },
-      { name: 'Cable Row',          sets: '3×12–15' },
-      { name: 'Barbell / DB Curl',  sets: '4×8–10' }
+      { name: 'Bench Press',        slug: 'bench-press',      sets: '4×8 · 5×6 · 6×5',  aSwap: 'Smith bench, feet up' },
+      { name: 'Pendlay Row',        slug: 'pendlay-row',      sets: '4×12 · 4×10 · 4×8', aSwap: 'Chest-supported T-bar row' },
+      { name: 'Incline DB Press',   slug: 'incline-db-press', sets: '4×12 · 4×10 · 4×8', aSwap: 'Same, lighter DBs' },
+      { name: 'Lat Pulldown',       slug: 'lat-pulldown',     sets: '3×12–15',            aSwap: 'Assisted pulldown' },
+      { name: 'Cable Row',          slug: 'cable-row',        sets: '3×12–15' },
+      { name: 'Barbell / DB Curl',  slug: 'bb-curl',          sets: '4×8–10' }
     ]},
     s2: { title: 'Shoulder · Leg · Triceps 1', exercises: [
-      { name: 'Back Squat',           sets: '4×8 · 5×6 · 6×5',  aSwap: 'Goblet squat or hack squat machine' },
-      { name: 'Seated DB Press',      sets: '4×12 · 4×10 · 4×8', aSwap: 'Seated shoulder press machine' },
-      { name: 'Romanian Deadlift',    sets: '4×12 · 4×10 · 4×8', aSwap: 'DB RDL, no barbell' },
-      { name: 'Lateral Raise',        sets: '4×12–15' },
-      { name: 'Split Squat + Reverse Pec Dec (superset)', sets: '3×10/leg · 3×20' },
-      { name: 'DB Skull Crusher',     sets: '4×10–12' }
+      { name: 'Back Squat',           slug: 'back-squat',        sets: '4×8 · 5×6 · 6×5',  aSwap: 'Goblet squat or hack squat machine' },
+      { name: 'Seated DB Press',      slug: 'seated-db-press',   sets: '4×12 · 4×10 · 4×8', aSwap: 'Seated shoulder press machine' },
+      { name: 'Romanian Deadlift',    slug: 'rdl',               sets: '4×12 · 4×10 · 4×8', aSwap: 'DB RDL, no barbell' },
+      { name: 'Lateral Raise',        slug: 'lateral-raise',     sets: '4×12–15' },
+      { name: 'Split Squat + Reverse Pec Dec (superset)', slug: 'split-squat', sets: '3×10/leg · 3×20' },
+      { name: 'DB Skull Crusher',     slug: 'db-skull-crusher',  sets: '4×10–12' }
     ]},
     s3: { title: 'Chest · Back · Biceps 2', exercises: [
-      { name: 'Pull-ups',             sets: '4×8 · 5×6 · 6×5',  aSwap: 'Assisted machine or band-assisted' },
-      { name: 'Incline Bench Press',  sets: '4×12 · 4×10 · 4×8', aSwap: 'Incline Smith or DB press' },
-      { name: 'Chest-Supported Row',  sets: '4×12 · 4×10 · 4×8' },
-      { name: 'Weighted Dips',        sets: '4×12 · 4×10 · 4×8', aSwap: 'Bench dips, feet elevated' },
-      { name: 'Machine Press or Fly', sets: '3×12–15' },
-      { name: 'Incline DB Curl',      sets: '4×12–15' }
+      { name: 'Pull-ups',             slug: 'pull-ups',            sets: '4×8 · 5×6 · 6×5',  aSwap: 'Assisted machine or band-assisted' },
+      { name: 'Incline Bench Press',  slug: 'incline-bench',       sets: '4×12 · 4×10 · 4×8', aSwap: 'Incline Smith or DB press' },
+      { name: 'Chest-Supported Row',  slug: 'chest-supported-row', sets: '4×12 · 4×10 · 4×8' },
+      { name: 'Weighted Dips',        slug: 'weighted-dips',       sets: '4×12 · 4×10 · 4×8', aSwap: 'Bench dips, feet elevated' },
+      { name: 'Machine Press or Fly', slug: 'pec-fly',             sets: '3×12–15' },
+      { name: 'Incline DB Curl',      slug: 'incline-db-curl',     sets: '4×12–15' }
     ]},
     s4: { title: 'Shoulder · Leg · Triceps 2', exercises: [
-      { name: 'Standing Overhead Press', sets: '4×8 · 5×6 · 6×5',  aSwap: 'Seated Smith OHP, shorter ROM' },
-      { name: 'Trap Bar Deadlift',       sets: '4×12 · 4×10 · 4×8', aSwap: 'KB deadlift or hip thrust' },
-      { name: 'Lateral Raise (heavier)', sets: '4×10–12' },
-      { name: 'Leg Press',               sets: '4×12–15' },
-      { name: 'Lying Hamstring Curl',    sets: '3×12–15' },
-      { name: 'Tricep Pushdown',         sets: '4×12–15' }
+      { name: 'Standing Overhead Press', slug: 'standing-ohp',         sets: '4×8 · 5×6 · 6×5',  aSwap: 'Seated Smith OHP, shorter ROM' },
+      { name: 'Trap Bar Deadlift',       slug: 'trap-bar-deadlift',    sets: '4×12 · 4×10 · 4×8', aSwap: 'KB deadlift or hip thrust' },
+      { name: 'Lateral Raise (heavier)', slug: 'cable-lateral-raise',  sets: '4×10–12' },
+      { name: 'Leg Press',               slug: 'leg-press',            sets: '4×12–15' },
+      { name: 'Lying Hamstring Curl',    slug: 'lying-hamstring-curl', sets: '3×12–15' },
+      { name: 'Tricep Pushdown',         slug: 'tricep-pushdown',      sets: '4×12–15' }
     ]}
   };
 
@@ -1331,7 +1456,8 @@
         { id: 'sun-prep-1', time: '10:00', text: 'Cook 2 cups of rice', hint: 'Feeds Mon–Tue lunches' },
         { id: 'sun-prep-2', time: '10:00', text: 'Cook one curry — dal, chole, or rajma', hint: 'Rotate weekly. 4 lunch portions.' },
         { id: 'sun-prep-3', time: '10:30', text: 'Boil 6 eggs', hint: 'Grab-and-go protein for the week' },
-        { id: 'sun-prep-4', time: '21:00', text: "Marinate Monday's chicken", hint: 'Oriental for Mon lunch · Italian for Mon dinner' }
+        { id: 'sun-prep-4', time: '11:00', text: "Batch marinade the week's chicken", hint: '~10 portions across all 4 styles. Freeze in pairs — one for Mon, Wed, Thu, Sat. Keep tonight\'s pair fresh (Sun dinner is Indian curry night).' },
+        { id: 'sun-prep-5', time: '21:00', text: "Move Monday's pair to the fridge", hint: 'Freezer → fridge overnight' }
       ],
       shop: [
         { id: 'sun-shop-1', time: '11:00', text: 'Weekly grocery run', hint: 'Protein · produce · staples · marinade ingredients' }
@@ -1382,9 +1508,9 @@
         { id: 'mon-eat-d', slot: 'Dinner', time: '19:30', name: 'Italian night',
           i: { p: 'Pasta · pesto · grilled chicken', v: '100g pasta · 180g chicken' },
           a: { p: 'Pasta · pesto · grilled chicken', v: '60g pasta · 130g chicken' } },
-        { id: 'mon-eat-x', slot: 'Snack', time: '21:00', name: 'Protein pancakes',
-          i: { p: '2 eggs · banana · protein scoop, on the pan', v: 'Full portion' },
-          a: { p: '2 eggs · banana · protein scoop, on the pan', v: '½ portion or skip' } }
+        { id: 'mon-eat-x', slot: 'Snack', time: '21:00', name: 'Protein crepes',
+          i: { p: '2 eggs · banana · protein scoop · splash of milk · thin batter', v: 'Full portion' },
+          a: { p: '2 eggs · banana · protein scoop · splash of milk · thin batter', v: '½ portion or skip' } }
       ],
       move: {
         stepTarget: { i: '12–14k', a: '10–12k' },
@@ -1400,7 +1526,7 @@
       name: 'Tuesday', short: 'Tue', kind: 'lift', kindLabel: 'Lift Day',
       macros: { i: { kcal: '2,470', protein: '118 g' }, a: { kcal: '1,510', protein: '108 g' } },
       prep: [
-        { id: 'tue-prep-1', time: '21:00', text: "Marinate Wednesday's chicken", hint: 'Fajita for Wed lunch · Indian for Wed dinner' }
+        { id: 'tue-prep-1', time: '21:00', text: "Move Wednesday's pair to the fridge", hint: 'Freezer → fridge overnight' }
       ],
       shop: [],
       eat: [
@@ -1436,7 +1562,7 @@
         { id: 'wed-prep-1', time: '10:00', text: 'Cook 2 cups of rice', hint: 'For Thu–Fri lunches' },
         { id: 'wed-prep-2', time: '10:00', text: 'Cook second curry of the week', hint: "Different from Sunday's — keeps taste fatigue away" },
         { id: 'wed-prep-3', time: '10:30', text: 'Chop veg for the week', hint: 'Broccoli · cauliflower · capsicum · carrots. Glass container, ready to pan-fry.' },
-        { id: 'wed-prep-4', time: '21:00', text: "Marinate Thursday's chicken", hint: 'Oriental for Thu lunch' }
+        { id: 'wed-prep-4', time: '21:00', text: "Move Thursday's pair to the fridge", hint: 'Freezer → fridge overnight' }
       ],
       shop: [
         { id: 'wed-shop-1', time: '18:00', text: 'Mid-week produce top-up', hint: 'Yogurt · fruit · greens · bread' }
@@ -1505,7 +1631,7 @@
       name: 'Friday', short: 'Fri', kind: 'rest', kindLabel: 'Rest · Long Walk',
       macros: { i: { kcal: '2,560', protein: '120 g' }, a: { kcal: '1,540', protein: '110 g' } },
       prep: [
-        { id: 'fri-prep-1', time: '21:00', text: "Marinate Saturday's chicken", hint: 'Italian for Sat lunch · Fajita for Sat dinner' }
+        { id: 'fri-prep-1', time: '21:00', text: "Move Saturday's pair to the fridge", hint: 'Freezer → fridge overnight' }
       ],
       shop: [],
       eat: [
@@ -1539,7 +1665,7 @@
       name: 'Saturday', short: 'Sat', kind: 'lift', kindLabel: 'Lift Day',
       macros: { i: { kcal: '2,600', protein: '126 g' }, a: { kcal: '1,560', protein: '115 g' } },
       prep: [
-        { id: 'sat-prep-1', time: '21:00', text: "Marinate Sunday's chicken", hint: 'Indian for Sun dinner (curry night)' }
+        { id: 'sat-prep-1', time: '21:00', text: "Move Sunday's pair to the fridge", hint: 'Freezer → fridge overnight' }
       ],
       shop: [],
       eat: [
@@ -1555,9 +1681,9 @@
         { id: 'sat-eat-d', slot: 'Dinner', time: '19:30', name: 'Fajita feast',
           i: { p: 'Pan-fried peppers, onions · fajita chicken · rotis', v: '180g chicken · 2 rotis' },
           a: { p: 'Pan-fried peppers, onions · fajita chicken · rotis', v: '130g chicken · 1 roti' } },
-        { id: 'sat-eat-x', slot: 'Snack', time: '21:30', name: 'Pancake party',
-          i: { p: 'Protein pancakes · scoop of high-protein ice cream', v: 'Full portion' },
-          a: { p: 'Protein pancakes · scoop of ice cream', v: '½ portion — weekend treat' } }
+        { id: 'sat-eat-x', slot: 'Snack', time: '21:30', name: 'Crepe party',
+          i: { p: 'Protein crepes · scoop of high-protein ice cream', v: 'Full portion' },
+          a: { p: 'Protein crepes · scoop of ice cream', v: '½ portion — weekend treat' } }
       ],
       move: {
         stepTarget: { i: '9–11k', a: '8–10k' },
@@ -2172,6 +2298,19 @@
               const eid = `${dayKey}-mv-lift-${i}`;
               const done = isChecked(eid);
               const showSwap = state.user === 'a' && e.aSwap;
+              const vid = e.slug && EXERCISE_VIDEOS[e.slug];
+              const rightChildren = [
+                el('div', { class: 'exercise-sets' }, [
+                  e.sets, el('span', { class: 'w' }, 'wk 1 · 2 · 3')
+                ])
+              ];
+              if (vid) {
+                rightChildren.push(el('button', {
+                  class: 'exercise-play',
+                  'aria-label': 'Watch ' + e.name + ' demo',
+                  onClick: (evt) => { evt.stopPropagation(); openVideo(e.name, vid); }
+                }, [ el('span', { html: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>' }) ]));
+              }
               ex.append(el('div', {
                 class: 'exercise' + (done ? ' done' : ''),
                 onClick: () => { setChecked(eid, !done); renderAll(); }
@@ -2181,9 +2320,7 @@
                   el('div', { class: 'exercise-name' }, e.name),
                   showSwap ? el('span', { class: 'exercise-swap' }, `Amba: ${e.aSwap}`) : null
                 ].filter(Boolean)),
-                el('div', { class: 'exercise-sets' }, [
-                  e.sets, el('span', { class: 'w' }, 'wk 1 · 2 · 3')
-                ])
+                el('div', { class: 'exercise-row-right' }, rightChildren)
               ]));
             });
             return ex;
@@ -2300,6 +2437,34 @@
   document.getElementById('settings-btn').addEventListener('click', openSettings);
   document.getElementById('settings-close').addEventListener('click', closeSettings);
   document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+
+  // Video modal
+  function openVideo(exerciseName, vid) {
+    document.getElementById('video-title').textContent = exerciseName;
+    document.getElementById('video-frame').src = `https://www.youtube-nocookie.com/embed/${vid.videoId}?rel=0&modestbranding=1`;
+    const metaEl = document.getElementById('video-meta');
+    metaEl.innerHTML = '';
+    if (vid.channel) {
+      const c = document.createElement('span');
+      c.textContent = vid.title + ' · ' + vid.channel + '   ';
+      metaEl.appendChild(c);
+    }
+    if (vid.url) {
+      const a = document.createElement('a');
+      a.href = vid.url; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = 'OPEN ON YOUTUBE';
+      metaEl.appendChild(a);
+    }
+    document.getElementById('video-backdrop').classList.add('show');
+    document.getElementById('video-modal').classList.add('show');
+  }
+  function closeVideo() {
+    document.getElementById('video-modal').classList.remove('show');
+    document.getElementById('video-backdrop').classList.remove('show');
+    document.getElementById('video-frame').src = 'about:blank'; // stop playback
+  }
+  document.getElementById('video-close').addEventListener('click', closeVideo);
+  document.getElementById('video-backdrop').addEventListener('click', closeVideo);
 
   // Swipe to change day
   let touchStartX = null, touchStartY = null;
