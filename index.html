@@ -1979,6 +1979,50 @@
     'thu-prep-1': 'overnight-oats'
   };
 
+  // Meals that need active cooking (not assembly) — surface as cook tasks in the Prep tab
+  // at meal-time minus 30 min.
+  const ACTIVE_COOK_MEALS = new Set([
+    // Breakfasts (all 7)
+    'mon-eat-b', 'tue-eat-b', 'wed-eat-b', 'thu-eat-b', 'fri-eat-b', 'sat-eat-b', 'sun-eat-b',
+    // Lunches (all except Sun 'Fresh cook' which IS the Sunday cook batch)
+    'mon-eat-l', 'tue-eat-l', 'wed-eat-l', 'thu-eat-l', 'fri-eat-l', 'sat-eat-l',
+    // Dinners (skip Tue Yogurt Paradise & Fri Berry Bliss — assembly)
+    'mon-eat-d', 'wed-eat-d', 'thu-eat-d', 'sat-eat-d', 'sun-eat-d',
+    // Snacks: only the ones needing cook (crepes on Mon & Sat)
+    'mon-eat-x', 'sat-eat-x'
+  ]);
+
+  function cookTimeFor(mealTime) {
+    if (!mealTime || !/^\d\d:\d\d$/.test(mealTime)) return '';
+    const [h, m] = mealTime.split(':').map(Number);
+    let mm = m - 30, hh = h;
+    if (mm < 0) { mm += 60; hh -= 1; }
+    if (hh < 0) hh = 0;
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  }
+
+  // Prep task list = the day's fixed prep entries + auto-derived cook tasks (one per meal
+  // in ACTIVE_COOK_MEALS), sorted by time.
+  function getPrepTasks(day) {
+    const cookTasks = day.eat
+      .filter(m => ACTIVE_COOK_MEALS.has(m.id))
+      .map(m => ({
+        id: m.id.replace('-eat-', '-cook-'),
+        time: cookTimeFor(m.time),
+        text: 'Cook ' + m.name,
+        hint: (m[state.user] && m[state.user].p) || '',
+        recipeKey: MEAL_RECIPES[m.id]
+      }));
+    return [...day.prep, ...cookTasks]
+      .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+  }
+  function getPrepTaskIds(day) {
+    const cookIds = day.eat
+      .filter(m => ACTIVE_COOK_MEALS.has(m.id))
+      .map(m => m.id.replace('-eat-', '-cook-'));
+    return [...day.prep.map(t => t.id), ...cookIds];
+  }
+
   // Meal ID → recipe key in RECIPES. Shakes and pure "sample the prep" meals stay out.
   const MEAL_RECIPES = {
     // Breakfasts
@@ -2380,7 +2424,7 @@
   function taskIdsForDay(day, tabKey, date) {
     const iso = date || state.date;
     const dayKey = DAY_INDEX[dowFromISO(iso)];
-    if (tabKey === 'prep') return day.prep.map(t => t.id);
+    if (tabKey === 'prep') return getPrepTaskIds(day);
     if (tabKey === 'shop') return day.shop.map(t => t.id);
     if (tabKey === 'eat')  return day.eat.map(t => t.id);
     if (tabKey === 'move') {
@@ -2424,7 +2468,7 @@
 
   function makeTask(t) {
     const done = isChecked(t.id);
-    const recipeKey = PREP_RECIPES[t.id];
+    const recipeKey = t.recipeKey || PREP_RECIPES[t.id];
     const children = [
       el('div', { class: 'cbox' }),
       el('div', { class: 'task-time' }, t.time || ''),
@@ -2598,18 +2642,19 @@
   }
 
   function renderPrep(day) {
+    const tasks = getPrepTasks(day);
     const wrap = el('div', {}, [
       el('h2', { class: 'tab-title' }, 'Prep'),
-      el('p', { class: 'tab-sub' }, day.prep.length === 0 ? '' : 'Get ahead of tomorrow.')
+      el('p', { class: 'tab-sub' }, tasks.length === 0 ? '' : "What's on the stove today.")
     ]);
-    if (day.prep.length === 0) {
+    if (tasks.length === 0) {
       wrap.append(el('div', { class: 'empty' }, [
         el('span', { class: 'empty-icon' }, '·'),
         'Nothing to prep today. Enjoy the quiet.'
       ]));
     } else {
       const list = el('div', { class: 'task-list' });
-      day.prep.forEach(t => list.append(makeTask(t)));
+      tasks.forEach(t => list.append(makeTask(t)));
       wrap.append(list);
     }
     const ref = el('div', { class: 'marinades-ref' }, [
