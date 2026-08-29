@@ -85,6 +85,7 @@
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   html, body { margin: 0; padding: 0; overscroll-behavior-y: contain; }
   body {
     background: var(--ground);
@@ -163,16 +164,6 @@
     font-size: 16px;
     font-weight: 500;
   }
-  .date-nav button.today-btn {
-    width: auto;
-    padding: 0 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
   .date-nav button:active { background: var(--card-2); }
 
   .date-block {
@@ -190,13 +181,31 @@
     letter-spacing: -0.01em;
     font-weight: 500;
   }
+  .date-full-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 4px;
+  }
   .date-full {
     font-family: var(--mono);
     font-size: 12px;
     color: var(--muted);
     letter-spacing: 0.02em;
-    margin-top: 4px;
   }
+  .today-link {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--strength);
+    cursor: pointer;
+  }
+  .today-link:active { opacity: 0.6; }
   .day-kind {
     font-family: var(--sans);
     font-size: 10px;
@@ -261,8 +270,8 @@
   /* OVERVIEW */
   .over-week {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
     margin: 0 0 24px;
   }
   .over-day {
@@ -270,8 +279,9 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 10px 4px;
-    border-radius: 12px;
+    min-width: 0;
+    padding: 8px 2px;
+    border-radius: 10px;
     background: var(--card);
     border: 1px solid var(--divider);
     cursor: pointer;
@@ -294,28 +304,32 @@
   }
   .over-day-num {
     font-family: var(--serif);
-    font-size: 20px;
+    font-size: 18px;
     color: var(--ink);
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
   .over-day-tag {
+    display: block;
+    max-width: 100%;
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 7px;
     color: var(--muted);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     height: 10px;
   }
   .over-day-dot {
+    display: block;
+    flex-shrink: 0;
     width: 4px;
     height: 4px;
     border-radius: 50%;
     margin-top: 2px;
   }
-  .over-day-dot.done { background: var(--steps); }
-  .over-day-dot.partial { background: var(--nutrition); }
-  .over-day-dot.empty { background: var(--divider-strong); }
 
   .over-panel {
     background: var(--card);
@@ -334,13 +348,14 @@
   }
   .over-numbers {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
   .over-num {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
   .over-num .k {
     font-family: var(--sans);
@@ -372,8 +387,8 @@
   }
   .over-row {
     display: grid;
-    grid-template-columns: 60px 1fr 50px;
-    gap: 12px;
+    grid-template-columns: 52px minmax(0, 1fr) 40px;
+    gap: 10px;
     align-items: center;
     cursor: pointer;
     padding: 4px 0;
@@ -445,8 +460,8 @@
   .task-list { display: flex; flex-direction: column; }
   .task {
     display: grid;
-    grid-template-columns: 24px 52px 1fr;
-    gap: 12px;
+    grid-template-columns: 22px 46px minmax(0, 1fr);
+    gap: 10px;
     padding: 14px 0;
     align-items: baseline;
     border-bottom: 1px dashed var(--divider);
@@ -601,8 +616,8 @@
   .exercises { display: flex; flex-direction: column; }
   .exercise {
     display: grid;
-    grid-template-columns: 24px 1fr auto;
-    gap: 12px;
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    gap: 10px;
     padding: 12px 0;
     align-items: baseline;
     border-bottom: 1px dashed var(--divider);
@@ -675,8 +690,8 @@
   }
   .marinade-mini {
     display: grid;
-    grid-template-columns: 80px 1fr;
-    gap: 12px;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 10px;
     padding: 10px 0;
     border-bottom: 1px dashed var(--divider);
     align-items: baseline;
@@ -741,13 +756,14 @@
     max-width: 520px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
   }
   .tabs button {
     background: transparent;
     border: 0;
-    padding: 8px 2px 6px;
+    padding: 8px 1px 6px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -756,9 +772,9 @@
     border-radius: 10px;
     font-family: var(--sans);
     color: var(--muted);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     position: relative;
   }
@@ -774,20 +790,21 @@
     border-radius: 999px;
   }
   .tab-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: currentColor;
   }
-  .tab-icon svg { width: 20px; height: 20px; }
+  .tab-icon svg { width: 18px; height: 18px; }
   .tab-pill {
     font-family: var(--mono);
-    font-size: 9px;
+    font-size: 8px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
+    white-space: nowrap;
   }
   .tabs button.active .tab-pill { color: var(--ink-soft); }
 
@@ -918,7 +935,7 @@
   }
   .goal-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
   .goal-user {
@@ -1032,7 +1049,7 @@
 
   .balance-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-top: 12px;
   }
@@ -1098,7 +1115,7 @@
 
   .weight-summary {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: 12px;
   }
@@ -1171,7 +1188,6 @@
       <div class="toggle" id="user-toggle" role="tablist" aria-label="Whose plan"></div>
       <div class="date-nav">
         <button id="prev-day" aria-label="Previous day">‹</button>
-        <button id="today-btn" class="today-btn">Today</button>
         <button id="next-day" aria-label="Next day">›</button>
         <button id="settings-btn" class="settings-btn" aria-label="Settings"></button>
       </div>
@@ -1179,7 +1195,10 @@
     <div class="date-block">
       <div>
         <div class="date-day" id="date-day">—</div>
-        <div class="date-full" id="date-full">—</div>
+        <div class="date-full-row">
+          <div class="date-full" id="date-full">—</div>
+          <button id="today-btn" class="today-link">Today</button>
+        </div>
       </div>
       <div class="day-kind" id="day-kind">—</div>
     </div>
@@ -1214,6 +1233,11 @@
 </div>
 
 <script>
+  // DEBUG: allow ?tab=prep|shop|eat|move|log&settings=1 for screenshot-driven QA. Harmless to leave in.
+  const __qs = new URLSearchParams(location.search);
+  const __qsTab = __qs.get('tab');
+  const __qsSettings = __qs.get('settings') === '1';
+
   const USERS = {
     i: { key: 'i', label: 'I',    name: 'Avisek', kcal: '2,400', protein: '150 g' },
     a: { key: 'a', label: 'Amba', name: 'Amba',   kcal: '1,500', protein: '120 g' }
@@ -1701,9 +1725,9 @@
       const iso = fmtISO(d);
       const dayObj = DAYS[DAY_INDEX[d.getDay()]];
       const prog = dayProgress(dayObj, iso);
-      let dotClass = 'empty';
-      if (prog.done > 0 && prog.done < prog.total) dotClass = 'partial';
-      if (prog.total > 0 && prog.done === prog.total) dotClass = 'done';
+      let dotColor = 'var(--divider-strong)';
+      if (prog.done > 0 && prog.done < prog.total) dotColor = 'var(--nutrition)';
+      if (prog.total > 0 && prog.done === prog.total) dotColor = 'var(--steps)';
       const isToday = iso === state.date;
       const tag = dayObj.kind.includes('lift') ? 'Lift' : (dayObj.kind === 'prep' ? 'Prep' : 'Rest');
       strip.append(el('div', {
@@ -1713,7 +1737,10 @@
         el('span', { class: 'over-day-dow' }, ['S','M','T','W','T','F','S'][d.getDay()]),
         el('span', { class: 'over-day-num' }, String(d.getDate())),
         el('span', { class: 'over-day-tag' }, tag),
-        el('span', { class: 'over-day-dot ' + dotClass })
+        // Color set inline (not via a modifier class) — a compound class selector here
+        // triggers a layout-sizing bug in some browsers when repeated across 7 sibling
+        // grid items (the dot inflates from 4x4 to ~40x120). Inline style sidesteps it.
+        el('div', { class: 'over-day-dot', style: 'background:' + dotColor })
       ]));
     }
     wrap.append(strip);
@@ -2137,7 +2164,7 @@
         ]),
         el('div', { class: 'lift-block' }, [
           el('h4', { class: 'lift-title' }, sess.title),
-          el('div', { class: 'lift-when' }, 'Weeks: 1 lightest / 3 heaviest · Every 3 weeks reset with +2.5–5 lb'),
+          el('div', { class: 'lift-when' }, 'Weeks: 1 lightest / 3 heaviest · Every 3 weeks reset with +1.25–2.5 kg'),
           day.move.lift.note ? el('div', { class: 'lift-note' }, day.move.lift.note) : null,
           (() => {
             const ex = el('div', { class: 'exercises' });
@@ -2193,7 +2220,7 @@
     const kind = document.getElementById('day-kind');
     kind.className = 'day-kind ' + day.kind;
     kind.textContent = day.kindLabel;
-    document.getElementById('today-btn').style.opacity = (state.date === todayISO()) ? 0.4 : 1;
+    document.getElementById('today-btn').style.display = (state.date === todayISO()) ? 'none' : 'inline';
   }
 
   function renderProgress() {
@@ -2320,6 +2347,8 @@
   }
 
   renderAll();
+  if (__qsTab && TABS.some(t => t.key === __qsTab)) { state.tab = __qsTab; renderAll(); }
+  if (__qsSettings) openSettings();
 </script>
 </body>
 </html>

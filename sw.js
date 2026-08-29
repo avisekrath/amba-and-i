@@ -1,6 +1,6 @@
 // Amba & I service worker
 // Bump CACHE_VERSION when you change any of the app shell files below.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `amba-and-i-${CACHE_VERSION}`;
 
 const SHELL = [
