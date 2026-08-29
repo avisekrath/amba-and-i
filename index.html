@@ -1282,6 +1282,169 @@
     justify-self: end;
   }
 
+  /* Recipe button on prep task rows */
+  .task-recipe {
+    background: var(--nutrition-soft);
+    color: var(--nutrition);
+    border: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    margin-top: 2px;
+  }
+  .task-recipe svg { width: 13px; height: 13px; }
+  .task-recipe:active { background: var(--nutrition); color: var(--ground); }
+  .task.has-recipe {
+    grid-template-columns: 24px 52px 1fr 26px;
+    gap: 12px;
+  }
+
+  /* Recipe modal — extends .modal */
+  .recipe-modal { padding-bottom: env(safe-area-inset-bottom); }
+  .recipe-subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 14px;
+    margin: -8px 0 16px;
+    line-height: 1.4;
+  }
+  .recipe-carousel { margin-bottom: 20px; }
+  .recipe-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .recipe-tabs::-webkit-scrollbar { display: none; }
+  .recipe-tab {
+    background: var(--card-2);
+    border: 1px solid var(--divider);
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .recipe-tab.active {
+    background: var(--strength);
+    border-color: var(--strength);
+    color: var(--ground);
+  }
+  .recipe-frame-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .recipe-frame-wrap iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: 0;
+  }
+  .recipe-video-caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .recipe-video-caption a {
+    color: var(--strength);
+    text-decoration: none;
+    font-style: normal;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .recipe-section-h {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 24px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .recipe-ingredients, .recipe-steps {
+    margin: 0; padding: 0; list-style: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .recipe-ingredients li {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .recipe-ingredients li:last-child { border-bottom: 0; }
+  .recipe-ingredients li b {
+    display: block;
+    font-family: var(--sans);
+    color: var(--nutrition);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .recipe-steps { counter-reset: step; }
+  .recipe-steps li {
+    counter-increment: step;
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px dashed var(--divider);
+  }
+  .recipe-steps li:last-child { border-bottom: 0; }
+  .recipe-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 8px;
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--strength);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  .no-videos-note {
+    padding: 20px;
+    background: var(--card-2);
+    border: 1px dashed var(--divider-strong);
+    border-radius: 8px;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
   @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1349,6 +1512,15 @@
     <div class="video-frame-wrap"><iframe id="video-frame" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
     <div class="video-meta" id="video-meta"></div>
   </div>
+
+  <div class="modal-backdrop" id="recipe-backdrop"></div>
+  <div class="modal recipe-modal" id="recipe-modal" role="dialog" aria-label="Recipe">
+    <div class="modal-head">
+      <h2 id="recipe-title">Recipe</h2>
+      <button id="recipe-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body" id="recipe-body"></div>
+  </div>
 </div>
 
 <script>
@@ -1393,6 +1565,113 @@
   // Add/replace entries in EXERCISE_VIDEOS to switch demos; the ▶ button auto-appears when a slug has one.
   const EXERCISE_VIDEOS = {
     // filled in on next commit — placeholder for now so play buttons stay hidden
+  };
+
+  // Recipe library — each prep task can point to one of these via recipeKey.
+  // videos[] is a carousel; each entry: { videoId, title, channel, url, variant }.
+  // videos[] populated separately from a research pass; UI hides the carousel until videos exist.
+  const RECIPES = {
+    'basic-rice': {
+      title: 'Basic rice',
+      subtitle: 'Basmati · cooker or stovetop',
+      ingredients: [
+        '2 cups basmati rice',
+        '3 cups water (2:1 for cooker · 1.5:1 for stovetop)',
+        'Pinch of salt'
+      ],
+      steps: [
+        'Rinse rice 2–3 times until water runs mostly clear',
+        'Soak 15–20 min if you have time — fluffier grains',
+        'Pressure cooker: 2 whistles on medium, natural release ~10 min',
+        'Stovetop: bring to a boil, cover, low heat 12 min, rest 5 min off the heat',
+        'Fluff with a fork before serving'
+      ],
+      videos: []
+    },
+    'curry': {
+      title: 'Curries',
+      subtitle: 'Pick one — dal · chole · rajma. Rotate weekly.',
+      ingredients: [
+        '**Dal** — 1 cup toor or moong dal · onion · tomato · ginger-garlic · haldi · red chilli · cumin · ghee',
+        '**Chole** — 1 can chickpeas · onion · tomato · chole masala · ginger-garlic · bay leaf',
+        '**Rajma** — 1 can kidney beans · onion · tomato · rajma masala · ginger-garlic · garam masala'
+      ],
+      steps: [
+        'Pressure cook lentils/beans until soft (~15 min if unsoaked)',
+        'Heat ghee/oil in a heavy pan · temper cumin',
+        'Add onion → cook to golden · then ginger-garlic paste for 1 min',
+        'Add tomatoes + spices · cook until oil separates',
+        'Add cooked lentils/beans + water for consistency you like',
+        'Simmer 10 min · finish with cilantro'
+      ],
+      videos: []
+    },
+    'boiled-eggs': {
+      title: 'Boiled eggs',
+      subtitle: 'Hard-set · easy-peel',
+      ingredients: [
+        '6 eggs',
+        'Water to cover by 1–2 cm',
+        'Ice bath (bowl + water + ice)'
+      ],
+      steps: [
+        'Bring water to a rolling boil',
+        'Lower eggs in gently with a spoon',
+        'Boil exactly 10 min for hard-set yolks (7–8 for jammy)',
+        'Transfer straight to the ice bath for 5 min',
+        'Peel from the wider end where the air pocket is'
+      ],
+      videos: []
+    },
+    'marinades': {
+      title: 'Chicken marinades',
+      subtitle: 'Batch all 4 styles · freeze in labeled pairs',
+      ingredients: [
+        '**Oriental** — honey · soy sauce · grated ginger · minced garlic · lemon · black pepper',
+        '**Indian** — chicken masala · ginger-garlic · lemon · coriander pdr · red chilli · haldi',
+        '**Italian** — lemon · oregano · minced garlic · olive oil',
+        '**Fajita** — lime · jeera pdr · chilli pdr · black pepper · grated garlic'
+      ],
+      steps: [
+        'Portion chicken into 150–180g pieces (~10 portions total)',
+        'Whisk each marinade in its own bowl',
+        'Coat 2–3 portions per style in ziploc bags',
+        'Label bags by cook day — Mon · Wed · Thu · Sat',
+        'Freeze all except tonight\'s pair (Sunday dinner is Indian)'
+      ],
+      videos: []
+    },
+    'overnight-oats': {
+      title: 'Overnight oats',
+      subtitle: 'Soak tonight · ready in the morning',
+      ingredients: [
+        '⅓ cup rolled oats',
+        '⅔ cup milk or Greek yogurt / skyr',
+        '1 tsp chia seeds (optional)',
+        'Banana slices · berries · pomegranate',
+        '½ scoop protein powder (optional but keeps you full)'
+      ],
+      steps: [
+        'Combine oats + liquid + chia in a jar',
+        'Stir in protein powder if using — dissolve fully',
+        'Top with fruit',
+        'Fridge overnight (min 4 hrs)',
+        'Stir · add nuts or nut butter before eating'
+      ],
+      videos: []
+    }
+  };
+
+  // Prep task ID → recipe key in RECIPES. Missing entries mean no recipe icon on that task.
+  const PREP_RECIPES = {
+    'sun-prep-1': 'basic-rice',
+    'sun-prep-2': 'curry',
+    'sun-prep-3': 'boiled-eggs',
+    'sun-prep-4': 'marinades',
+    'mon-prep-1': 'overnight-oats',
+    'wed-prep-1': 'basic-rice',
+    'wed-prep-2': 'curry',
+    'thu-prep-1': 'overnight-oats'
   };
 
   const SESSIONS = {
@@ -1806,17 +2085,26 @@
 
   function makeTask(t) {
     const done = isChecked(t.id);
-    return el('div', {
-      class: 'task' + (done ? ' done' : ''),
-      onClick: () => { setChecked(t.id, !done); renderAll(); }
-    }, [
+    const recipeKey = PREP_RECIPES[t.id];
+    const children = [
       el('div', { class: 'cbox' }),
       el('div', { class: 'task-time' }, t.time || ''),
       el('div', { class: 'task-body' }, [
         el('div', { class: 'task-name' }, t.text),
         t.hint ? el('div', { class: 'task-hint' }, t.hint) : null
       ].filter(Boolean))
-    ]);
+    ];
+    if (recipeKey && RECIPES[recipeKey]) {
+      children.push(el('button', {
+        class: 'task-recipe',
+        'aria-label': 'View recipe for ' + t.text,
+        onClick: (evt) => { evt.stopPropagation(); openRecipe(recipeKey); }
+      }, [ el('span', { html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>' }) ]));
+    }
+    return el('div', {
+      class: 'task' + (done ? ' done' : '') + (recipeKey ? ' has-recipe' : ''),
+      onClick: () => { setChecked(t.id, !done); renderAll(); }
+    }, children);
   }
 
   function makeMealTask(m) {
@@ -2438,6 +2726,91 @@
   document.getElementById('settings-close').addEventListener('click', closeSettings);
   document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
 
+  // Recipe modal + video carousel
+  let currentRecipeKey = null;
+  let currentVideoIdx = 0;
+
+  function openRecipe(key) {
+    const r = RECIPES[key];
+    if (!r) return;
+    currentRecipeKey = key;
+    currentVideoIdx = 0;
+    document.getElementById('recipe-title').textContent = r.title;
+    renderRecipeBody();
+    document.getElementById('recipe-backdrop').classList.add('show');
+    document.getElementById('recipe-modal').classList.add('show');
+  }
+
+  function renderRecipeBody() {
+    const r = RECIPES[currentRecipeKey];
+    const body = document.getElementById('recipe-body');
+    body.innerHTML = '';
+
+    if (r.subtitle) body.append(el('p', { class: 'recipe-subtitle' }, r.subtitle));
+
+    // Video carousel
+    if (r.videos && r.videos.length > 0) {
+      const carousel = el('div', { class: 'recipe-carousel' });
+      // Tab pills (only if more than one video)
+      if (r.videos.length > 1) {
+        const tabs = el('div', { class: 'recipe-tabs' });
+        r.videos.forEach((v, i) => {
+          tabs.append(el('button', {
+            class: 'recipe-tab' + (i === currentVideoIdx ? ' active' : ''),
+            onClick: () => { currentVideoIdx = i; renderRecipeBody(); }
+          }, v.variant || ('#' + (i + 1))));
+        });
+        carousel.append(tabs);
+      }
+      const active = r.videos[currentVideoIdx];
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${active.videoId}?rel=0&modestbranding=1`;
+      frame.setAttribute('allow', 'accelerometer; encrypted-media; picture-in-picture');
+      frame.setAttribute('allowfullscreen', '');
+      carousel.append(el('div', { class: 'recipe-frame-wrap' }, [ frame ]));
+      // Caption
+      const cap = el('div', { class: 'recipe-video-caption' });
+      cap.append(el('span', {}, (active.title || '') + (active.channel ? ' · ' + active.channel : '')));
+      if (active.url) {
+        const a = document.createElement('a');
+        a.href = active.url; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = 'OPEN IN YOUTUBE';
+        cap.append(a);
+      }
+      carousel.append(cap);
+      body.append(carousel);
+    } else {
+      body.append(el('div', { class: 'no-videos-note' },
+        'Video walkthroughs coming — ingredients and steps below.'));
+    }
+
+    // Ingredients
+    body.append(el('h3', { class: 'recipe-section-h' }, 'Ingredients'));
+    const ing = el('ul', { class: 'recipe-ingredients' });
+    r.ingredients.forEach(i => {
+      // Replace **X** markers with <b>
+      const html = i.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+      ing.append(el('li', { html }));
+    });
+    body.append(ing);
+
+    // Steps
+    body.append(el('h3', { class: 'recipe-section-h' }, 'Steps'));
+    const st = el('ol', { class: 'recipe-steps' });
+    r.steps.forEach(s => st.append(el('li', {}, s)));
+    body.append(st);
+  }
+
+  function closeRecipe() {
+    document.getElementById('recipe-modal').classList.remove('show');
+    document.getElementById('recipe-backdrop').classList.remove('show');
+    // Clear iframe src to stop playback
+    const iframe = document.querySelector('#recipe-body iframe');
+    if (iframe) iframe.src = 'about:blank';
+    currentRecipeKey = null;
+    currentVideoIdx = 0;
+  }
+
   // Video modal
   function openVideo(exerciseName, vid) {
     document.getElementById('video-title').textContent = exerciseName;
@@ -2465,6 +2838,10 @@
   }
   document.getElementById('video-close').addEventListener('click', closeVideo);
   document.getElementById('video-backdrop').addEventListener('click', closeVideo);
+
+  // Recipe modal wiring
+  document.getElementById('recipe-close').addEventListener('click', closeRecipe);
+  document.getElementById('recipe-backdrop').addEventListener('click', closeRecipe);
 
   // Swipe to change day
   let touchStartX = null, touchStartY = null;
