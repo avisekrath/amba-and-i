@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#B54724"/>
+  <text x="256" y="380"
+        font-family="Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif"
+        font-size="440"
+        font-style="italic"
+        font-weight="400"
+        fill="#F5F3ED"
+        text-anchor="middle">&amp;</text>
+</svg>
